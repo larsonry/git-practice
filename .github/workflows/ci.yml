@@ -31,3 +31,30 @@ jobs:
         with:
           name: ci-logs
           path: ci-logs/
+
+  docker:
+    name: Build & Push Docker image
+    runs-on: ubuntu-latest
+    needs: build     # wait for your CI job to finish
+    permissions:
+      contents: read
+      packages: write   # allow pushing to GHCR
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/git-practice:latest
+            ghcr.io/${{ github.repository_owner }}/git-practice:${{ github.sha }}
