@@ -58,3 +58,27 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/git-practice:latest
             ghcr.io/${{ github.repository_owner }}/git-practice:${{ github.sha }}
+
+
+  smoketest:
+    name: Pull image & verify homepage
+    runs-on: ubuntu-latest
+    needs: docker
+    steps:
+      - name: Pull the image from GHCR
+        run: docker pull ghcr.io/${{ github.repository_owner }}/git-practice:${{ github.sha }}
+
+      - name: Run the container
+        run: |
+          docker run -d --rm --name web -p 8080:80 ghcr.io/${{ github.repository_owner }}/git-practice:${{ github.sha }}
+          # wait a moment for nginx to start
+          sleep 2
+
+      - name: Verify homepage contains marker text
+        run: |
+          curl -sS http://localhost:8080 | grep -q "Deployed with GitHub Actions + Docker + NGINX"
+          echo "Smoke test passed"
+
+      - name: Stop container
+        if: always()
+        run: docker stop web
